@@ -22,7 +22,7 @@ func vigenereDec(iBuf []byte, oBuf []byte, keyBytes []byte) {
 	}
 }
 
-func Vigenere(iBuf []byte, oBuf []byte, isEncrypt bool, key string) {
+func Vigenere(isEncrypt bool, key string) func([]byte, []byte) {
 	if len(key) == 0 {
 		log.Fatal("vigenere key cannot be empty")
 	}
@@ -30,8 +30,8 @@ func Vigenere(iBuf []byte, oBuf []byte, isEncrypt bool, key string) {
 	keyBytes := []byte(key)
 
 	if isEncrypt {
-		vigenereEnc(iBuf, oBuf, keyBytes)
+		return func(iBuf []byte, oBuf []byte) { vigenereEnc(iBuf, oBuf, keyBytes) }
 	} else {
-		vigenereDec(iBuf, oBuf, keyBytes)
+		return func(iBuf []byte, oBuf []byte) { vigenereDec(iBuf, oBuf, keyBytes) }
 	}
 }

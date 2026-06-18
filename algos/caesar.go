@@ -21,7 +21,7 @@ func caesarDec(iBuf []byte, oBuf []byte, shift byte) {
 	}
 }
 
-func Caesar(iBuf []byte, oBuf []byte, isEncrypt bool, key string) {
+func Caesar(isEncrypt bool, key string) func([]byte, []byte) {
 	trueKey, err := strconv.Atoi(key)
 
 	if err != nil {
@@ -31,8 +31,8 @@ func Caesar(iBuf []byte, oBuf []byte, isEncrypt bool, key string) {
 	shift := byte(trueKey)
 
 	if isEncrypt {
-		caesarEnc(iBuf, oBuf, shift)
+		return func(iBuf []byte, oBuf []byte) { caesarEnc(iBuf, oBuf, shift) }
 	} else {
-		caesarDec(iBuf, oBuf, shift)
+		return func(iBuf []byte, oBuf []byte) { caesarDec(iBuf, oBuf, shift) }
 	}
 }

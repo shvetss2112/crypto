@@ -1,1 +1,1 @@
-rm data/cipher data/cipher_sequential data/check.jpg
+rm results/*

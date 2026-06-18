@@ -4,22 +4,11 @@ test(){
 echo Cipher: $1 
 echo Key: $2
 
-echo Encrypt with chunk size 10
-./bin encrypt $1 data/ducati.jpg data/cipher 10 $2
-echo 
-echo Encrypt with chunk size 500
-./bin encrypt $1 data/ducati.jpg data/cipher 500 $2
-echo
-echo Encrypt with chunk size 10000
-./bin encrypt $1 data/ducati.jpg data/cipher 10000 $2
-echo 
-echo Encrypt with chunk size 6000000
-./bin encrypt $1 data/ducati.jpg data/cipher_sequential 6000000 $2
-
+echo Encrypt with $2 goroutine\(s\)
+./bin encrypt $1 data/crypto.txt results/cipher $2 $3
 echo
 echo Decrypt
-./bin decrypt $1 data/cipher data/check.jpg 10000 $2
+./bin decrypt $1 results/cipher results/check.txt  $2 $3
 }
 
-test caesar 200
-
+test $1 $2 $3

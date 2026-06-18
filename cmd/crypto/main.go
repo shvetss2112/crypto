@@ -14,12 +14,12 @@ type cryptoConfig struct {
 	iFileName string
 	oFileName string
 	algo      string
-	chunkSize int
+	threads   int
 	strKey    string
 	isEncrypt bool
 }
 
-func manageFiles(iFileName string, oFileName string) (*os.File, *os.File) {
+func getFiles(iFileName string, oFileName string) (*os.File, *os.File) {
 	iFile, err := os.Open(iFileName)
 	if err != nil {
 		log.Fatal(err)
@@ -34,32 +34,34 @@ func manageFiles(iFileName string, oFileName string) (*os.File, *os.File) {
 
 }
 
-func algoChooser(config *cryptoConfig) func(iBuf []byte, oBuf []byte) {
-
+func chooseAlgo(config *cryptoConfig) func(iBuf []byte, oBuf []byte) {
+	// resp: decide which particular callback from all
 	switch config.algo {
 	case "fence":
-		return func(iBuf []byte, oBuf []byte) { algos.Fence(iBuf, oBuf, config.isEncrypt, config.strKey) }
+		return algos.Fence(config.isEncrypt, config.strKey)
 	case "caesar":
-		return func(iBuf []byte, oBuf []byte) { algos.Caesar(iBuf, oBuf, config.isEncrypt, config.strKey) }
+		return algos.Caesar(config.isEncrypt, config.strKey)
 	case "vigenere":
-		return func(iBuf []byte, oBuf []byte) { algos.Vigenere(iBuf, oBuf, config.isEncrypt, config.strKey) }
+		return algos.Vigenere(config.isEncrypt, config.strKey)
 	case "something":
-		return func(iBuf []byte, oBuf []byte) { algos.Fence(iBuf, oBuf, config.isEncrypt, config.strKey) }
-	case "else":
-		return func(iBuf []byte, oBuf []byte) { algos.Fence(iBuf, oBuf, config.isEncrypt, config.strKey) }
+		return algos.Fence(config.isEncrypt, config.strKey)
 	default:
 		log.Fatal("Unexpected algorithm: " + config.algo)
 		return nil
 	}
 }
 
-func ParalelStart(iFile *os.File, oFile *os.File, blockSize int, algo func([]byte, []byte)) {
+func startInParalel(iFile *os.File, oFile *os.File, threadsNum int, algo func([]byte, []byte)) {
 
 	fstat, err := iFile.Stat()
 	if err != nil {
 		log.Fatal(err)
 	}
 	var fsz int64 = fstat.Size()
+	blockSize := (fsz + int64(threadsNum) - 1) / int64(threadsNum)
+	if int64(threadsNum) > fsz || threadsNum < 1 {
+		log.Fatal("Invalid number of threads")
+	}
 
 	var wg sync.WaitGroup
 	for i := int64(0); i < fsz; i = i + int64(blockSize) {
@@ -71,18 +73,7 @@ func ParalelStart(iFile *os.File, oFile *os.File, blockSize int, algo func([]byt
 	wg.Wait()
 }
 
-func run(config *cryptoConfig) {
-	start := time.Now()
-	iFile, oFile := manageFiles(config.iFileName, config.oFileName)
-	defer oFile.Close()
-	defer iFile.Close()
-	ParalelStart(iFile, oFile, config.chunkSize, algoChooser(config))
-	elapsed := time.Since(start)
-	fmt.Printf("Execution time: %s\n", elapsed)
-}
-
-func main() {
-
+func config() *cryptoConfig {
 	var actualIsEncrypt bool
 
 	if os.Args[1] == "encrypt" {
@@ -92,18 +83,30 @@ func main() {
 	} else {
 		log.Fatal("Unknown command: " + os.Args[1])
 	}
-	actualChunkSize, err := strconv.Atoi(os.Args[5])
+	actualThreadCount, err := strconv.Atoi(os.Args[5])
 	if err != nil {
 		log.Fatal("Incorrenct argument: " + os.Args[5])
 	}
-	config := &cryptoConfig{
+	return &cryptoConfig{
 		isEncrypt: actualIsEncrypt,
 		algo:      os.Args[2],
 		iFileName: os.Args[3],
 		oFileName: os.Args[4],
-		chunkSize: actualChunkSize,
+		threads:   actualThreadCount,
 		strKey:    os.Args[6],
 	}
+}
 
-	run(config)
+func run(config *cryptoConfig) {
+	start := time.Now()
+	iFile, oFile := getFiles(config.iFileName, config.oFileName)
+	defer oFile.Close()
+	defer iFile.Close()
+	startInParalel(iFile, oFile, config.threads, chooseAlgo(config))
+	elapsed := time.Since(start)
+	fmt.Printf("Execution time: %s\n", elapsed)
+}
+
+func main() {
+	run(config())
 }

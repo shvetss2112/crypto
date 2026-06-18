@@ -1,5 +1,7 @@
 package algos
 
+// responcibility: give callback func([]byte, []byte) for particular algo
+
 import (
 	"log"
 	"strconv"
@@ -41,7 +43,7 @@ func fenceDec(iBuf []byte, oBuf []byte, key int) {
 	}
 }
 
-func Fence(iBuf []byte, oBuf []byte, isEncrypt bool, key string) {
+func Fence(isEncrypt bool, key string) func([]byte, []byte) {
 	trueKey, err := strconv.Atoi(key)
 
 	if err != nil {
@@ -49,9 +51,9 @@ func Fence(iBuf []byte, oBuf []byte, isEncrypt bool, key string) {
 	}
 
 	if isEncrypt {
-		fenceEnc(iBuf, oBuf, trueKey)
+		return func(iBuf []byte, oBuf []byte) { fenceEnc(iBuf, oBuf, trueKey) }
 	} else {
-		fenceDec(iBuf, oBuf, trueKey)
+		return func(iBuf []byte, oBuf []byte) { fenceDec(iBuf, oBuf, trueKey) }
 	}
 
 }
