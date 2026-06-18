@@ -2,9 +2,12 @@ package main
 
 import (
 	algos "crypto/algos"
+	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"sync"
+	"time"
 )
 
 type cryptoConfig struct {
@@ -36,18 +39,16 @@ func manageFiles(iFileName string, oFileName string) (*os.File, *os.File) {
 func algoChooser(config *cryptoConfig) func(iBuf []byte, oBuf []byte) {
 
 	switch config.algo {
-	case "copy":
-		return func(iBuf []byte, oBuf []byte) { algos.Copy(iBuf, oBuf, config.isEncrypt, config.strKey) }
 	case "fence":
 		return func(iBuf []byte, oBuf []byte) { algos.Fence(iBuf, oBuf, config.isEncrypt, config.strKey) }
 	case "kardano":
-		return func(iBuf []byte, oBuf []byte) { algos.Copy(iBuf, oBuf, config.isEncrypt, config.strKey) }
-	case "some":
-		return func(iBuf []byte, oBuf []byte) { algos.Copy(iBuf, oBuf, config.isEncrypt, config.strKey) }
-	case "other":
-		return func(iBuf []byte, oBuf []byte) { algos.Copy(iBuf, oBuf, config.isEncrypt, config.strKey) }
-	case "shit":
-		return func(iBuf []byte, oBuf []byte) { algos.Copy(iBuf, oBuf, config.isEncrypt, config.strKey) }
+		return func(iBuf []byte, oBuf []byte) { algos.Fence(iBuf, oBuf, config.isEncrypt, config.strKey) }
+	case "vizhener":
+		return func(iBuf []byte, oBuf []byte) { algos.Fence(iBuf, oBuf, config.isEncrypt, config.strKey) }
+	case "something":
+		return func(iBuf []byte, oBuf []byte) { algos.Fence(iBuf, oBuf, config.isEncrypt, config.strKey) }
+	case "else":
+		return func(iBuf []byte, oBuf []byte) { algos.Fence(iBuf, oBuf, config.isEncrypt, config.strKey) }
 	default:
 		log.Fatal("Unexpected algorithm: " + config.algo)
 		return nil
@@ -75,31 +76,38 @@ func ParalelStart(iFile *os.File, oFile *os.File, blockSize int, algo func([]byt
 }
 
 func run(config *cryptoConfig) {
+	start := time.Now()
 	iFile, oFile := manageFiles(config.iFileName, config.oFileName)
 	defer oFile.Close()
 	defer iFile.Close()
 	ParalelStart(iFile, oFile, config.chunkSize, algoChooser(config))
+	elapsed := time.Since(start)
+	fmt.Printf("Execution time: %s\n", elapsed)
 }
 
 func main() {
 
+	var actualIsEncrypt bool
+
+	if os.Args[1] == "encrypt" {
+		actualIsEncrypt = true
+	} else if os.Args[1] == "decrypt" {
+		actualIsEncrypt = false
+	} else {
+		log.Fatal("Unknown command: " + os.Args[1])
+	}
+	actualChunkSize, err := strconv.Atoi(os.Args[5])
+	if err != nil {
+		log.Fatal("Incorrenct argument: " + os.Args[5])
+	}
 	config := &cryptoConfig{
-		iFileName: "data/ducati.jpg",
-		oFileName: "data/cipher",
-		algo:      "fence",
-		chunkSize: 400,
-		strKey:    "20",
-		isEncrypt: true,
+		isEncrypt: actualIsEncrypt,
+		algo:      os.Args[2],
+		iFileName: os.Args[3],
+		oFileName: os.Args[4],
+		chunkSize: actualChunkSize,
+		strKey:    os.Args[6],
 	}
 
 	run(config)
-	config2 := &cryptoConfig{
-		iFileName: "data/cipher",
-		oFileName: "data/check.jpg",
-		algo:      "fence",
-		chunkSize: 400,
-		strKey:    "20",
-		isEncrypt: false,
-	}
-	run(config2)
 }
