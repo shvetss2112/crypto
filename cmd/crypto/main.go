@@ -20,13 +20,11 @@ type cryptoConfig struct {
 }
 
 func manageFiles(iFileName string, oFileName string) (*os.File, *os.File) {
-	//open input file this one
 	iFile, err := os.Open(iFileName)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// create output file
 	oFile, err := os.Create(oFileName)
 	if err != nil {
 		log.Fatal(err)
@@ -41,10 +39,10 @@ func algoChooser(config *cryptoConfig) func(iBuf []byte, oBuf []byte) {
 	switch config.algo {
 	case "fence":
 		return func(iBuf []byte, oBuf []byte) { algos.Fence(iBuf, oBuf, config.isEncrypt, config.strKey) }
-	case "kardano":
-		return func(iBuf []byte, oBuf []byte) { algos.Fence(iBuf, oBuf, config.isEncrypt, config.strKey) }
-	case "vizhener":
-		return func(iBuf []byte, oBuf []byte) { algos.Fence(iBuf, oBuf, config.isEncrypt, config.strKey) }
+	case "caesar":
+		return func(iBuf []byte, oBuf []byte) { algos.Caesar(iBuf, oBuf, config.isEncrypt, config.strKey) }
+	case "vigenere":
+		return func(iBuf []byte, oBuf []byte) { algos.Vigenere(iBuf, oBuf, config.isEncrypt, config.strKey) }
 	case "something":
 		return func(iBuf []byte, oBuf []byte) { algos.Fence(iBuf, oBuf, config.isEncrypt, config.strKey) }
 	case "else":
@@ -57,14 +55,12 @@ func algoChooser(config *cryptoConfig) func(iBuf []byte, oBuf []byte) {
 
 func ParalelStart(iFile *os.File, oFile *os.File, blockSize int, algo func([]byte, []byte)) {
 
-	// get filesize
 	fstat, err := iFile.Stat()
 	if err != nil {
 		log.Fatal(err)
 	}
 	var fsz int64 = fstat.Size()
 
-	//spin ts up
 	var wg sync.WaitGroup
 	for i := int64(0); i < fsz; i = i + int64(blockSize) {
 		iBuffer := make([]byte, blockSize)
