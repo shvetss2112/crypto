@@ -43,6 +43,9 @@ func chooseAlgo(config *cryptoConfig) func(iBuf []byte, oBuf []byte) {
 		return algos.Caesar(config.isEncrypt, config.strKey)
 	case "vigenere":
 		return algos.Vigenere(config.isEncrypt, config.strKey)
+	case "vigenereauto":
+		return algos.Autokey(config.isEncrypt, config.strKey)
+
 	case "something":
 		return algos.Fence(config.isEncrypt, config.strKey)
 	default:
