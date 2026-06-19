@@ -46,8 +46,8 @@ func chooseAlgo(config *cryptoConfig) func(iBuf []byte, oBuf []byte) {
 	case "vigenereauto":
 		return algos.Autokey(config.isEncrypt, config.strKey)
 
-	case "something":
-		return algos.Fence(config.isEncrypt, config.strKey)
+	case "affine":
+		return algos.Affine(config.isEncrypt, config.strKey)
 	default:
 		log.Fatal("Unexpected algorithm: " + config.algo)
 		return nil
